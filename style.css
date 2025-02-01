@@ -1,0 +1,114 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f0f0f0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.input-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+
+.input-group {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="text"], input[type="number"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+input[type="text"] {
+    width: 200px;
+}
+
+input[type="number"] {
+    width: 80px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.output-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#table-container {
+    overflow-x: auto;
+}
+
+#value-table {
+    display: table;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+    overflow: auto;
+}
+
+.table-row {
+    display: table-row;
+}
+
+.table-cell {
+    display: table-cell;
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #ddd;
+    background-color: white;
+}
+
+.table-cell.selected {
+    font-weight: bold;
+    background-color: #e8e8e8;
+}
+
+.header-cell {
+    font-weight: bold;
+    background-color: #f0f0f0;
+}
+
+#canvas-holder {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.graph-controls {
+    margin-top: 10px;
+}
+
+h3 {
+    color: #333;
+    margin-top: 0;
+}
