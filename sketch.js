@@ -338,9 +338,9 @@ function draw() {
             stroke(255);
             strokeWeight(8);
             point(mapX(value.x), mapY(value.y));
-            stroke(255, 0, 0);
-            strokeWeight(6);
         }
+        stroke(255, 0, 0);
+        strokeWeight(6);
         point(mapX(value.x), mapY(value.y));
     });
     
