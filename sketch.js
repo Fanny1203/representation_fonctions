@@ -17,6 +17,20 @@ function setup() {
         redraw();
     });
 
+    // Gestion de l'échelle y automatique/manuelle
+    document.getElementById('auto-y').addEventListener('change', function(e) {
+        const yminInput = document.getElementById('ymin');
+        const ymaxInput = document.getElementById('ymax');
+        yminInput.disabled = e.target.checked;
+        ymaxInput.disabled = e.target.checked;
+        if (!e.target.checked) {
+            // Si on passe en mode manuel, on initialise avec les valeurs actuelles
+            yminInput.value = yMin.toFixed(1);
+            ymaxInput.value = yMax.toFixed(1);
+        }
+        calculateValues();
+    });
+
     // Ajout de l'écouteur pour le clic sur le canvas
     canvas.mousePressed(handleCanvasClick);
     
@@ -83,6 +97,7 @@ function calculateValues() {
     const xmin = parseFloat(document.getElementById('xmin').value);
     const xmax = parseFloat(document.getElementById('xmax').value);
     const step = parseFloat(document.getElementById('step').value);
+    const autoY = document.getElementById('auto-y').checked;
     
     try {
         // Compilation de la fonction avec math.js
@@ -99,14 +114,37 @@ function calculateValues() {
             }
         }
         
-        // Calcul des bornes en y
-        yMin = math.min(values.map(v => v.y));
-        yMax = math.max(values.map(v => v.y));
-        
-        // Ajout d'une marge de 10%
-        const yRange = yMax - yMin;
-        yMin -= yRange * 0.1;
-        yMax += yRange * 0.1;
+        if (autoY) {
+            // Filtrer les valeurs infinies et NaN
+            const validYValues = values
+                .map(v => v.y)
+                .filter(y => isFinite(y) && !isNaN(y));
+            
+            if (validYValues.length > 0) {
+                // Calcul automatique des bornes en y sur les valeurs valides
+                yMin = math.min(validYValues);
+                yMax = math.max(validYValues);
+                
+                // Ajout d'une marge de 10%
+                const yRange = yMax - yMin;
+                yMin -= yRange * 0.1;
+                yMax += yRange * 0.1;
+                
+                // Si les valeurs sont très proches de 0, ajuster l'échelle
+                if (Math.abs(yMax - yMin) < 1e-10) {
+                    yMin = -1;
+                    yMax = 1;
+                }
+            } else {
+                // Si aucune valeur valide, utiliser une échelle par défaut
+                yMin = -10;
+                yMax = 10;
+            }
+        } else {
+            // Utilisation des valeurs manuelles
+            yMin = parseFloat(document.getElementById('ymin').value);
+            yMax = parseFloat(document.getElementById('ymax').value);
+        }
         
         // Affichage du tableau de valeurs
         displayTable();
@@ -170,19 +208,49 @@ function draw() {
     
     // Marges
     const margin = 40;
+    const rangex = xmax - xmin;
+    const rangey = yMax - yMin;
+    
     
     // Transformation des coordonnées
-    const mapX = (x) => map(x, xmin, xmax, margin, width - margin);
-    const mapY = (y) => map(y, yMin, yMax, height - margin, margin);
+    const mapX = (x) => map(x, xmin-0.05*rangex, xmax+0.05*rangex, margin, width - margin);
+    const mapY = (y) => map(y, yMin-0.05*rangey, yMax+0.05*rangey, height - margin, margin);
     
     // Dessin des axes
     stroke(100);
     strokeWeight(1);
     
-    // Axe X
+    // Axe X avec flèche
     line(margin, mapY(0), width - margin, mapY(0));
-    // Axe Y
+    // Flèche de l'axe X
+    push();
+    fill(100);
+    noStroke();
+    triangle(
+        width - margin + 8, mapY(0),
+        width - margin - 4, mapY(0) - 4,
+        width - margin - 4, mapY(0) + 4
+    );
+    // Label "x"
+    textSize(14);
+    text("x", width - margin + 20, mapY(0) + 5);
+    pop();
+    
+    // Axe Y avec flèche
     line(mapX(0), margin, mapX(0), height - margin);
+    // Flèche de l'axe Y
+    push();
+    fill(100);
+    noStroke();
+    triangle(
+        mapX(0), margin - 8,
+        mapX(0) - 4, margin + 4,
+        mapX(0) + 4, margin + 4
+    );
+    // Label "y"
+    textSize(14);
+    text("y", mapX(0) - 15, margin - 10);
+    pop();
     
     // Graduations et valeurs sur l'axe X
     for (let x = Math.ceil(xmin); x <= Math.floor(xmax); x++) {
@@ -204,12 +272,10 @@ function draw() {
     
     // Ajustement du pas pour avoir au maximum 20 graduations
     const numGraduations = yRange / step;
-    if (numGraduations > 20) {
-        if (numGraduations <= 40) {
+    if (numGraduations > 15) {
+        if (numGraduations <= 30) {
             step = step * 2;
-        } else if (numGraduations <= 50) {
-            step = step * 3;
-        } else if (numGraduations <= 100) {
+        } else if (numGraduations <= 75) {
             step = step * 5;
         } else {
             step = step * Math.ceil(numGraduations / 20);
@@ -272,24 +338,51 @@ function draw() {
         stroke(0, 0, 255);
         strokeWeight(1);
         noFill();
-        beginShape();
         
         // On utilise plus de points pour la courbe continue
-        const numPoints = width;
+        const numPoints = width * 2; // Plus de points pour plus de précision
         const f = math.compile(document.getElementById('function').value);
+        
+        let lastY = null;
+        let lastX = null;
+        beginShape();
         
         for (let i = 0; i <= numPoints; i++) {
             const x = map(i, 0, numPoints, xmin-1, xmax+1);
             try {
                 const y = f.evaluate({x: x});
-                // On vérifie que y est dans les limites
-                if (y >= yMin && y <= yMax && !isNaN(y)) {
+                
+                // Vérifier si le point est valide et dans les limites
+                if (isFinite(y) && !isNaN(y) && y >= yMin && y <= yMax) {
+                    // Détecter les discontinuités
+                    if (lastY !== null && lastX !== null) {
+                        const dx = x - lastX;
+                        const dy = y - lastY;
+                        const slope = Math.abs(dy/dx);
+                        
+                        // Si la pente est trop grande ou si on traverse une asymptote
+                        if (slope > 100) { // Valeur arbitraire pour détecter les changements brusques
+                            endShape();
+                            beginShape();
+                        }
+                    }
+                    
                     vertex(mapX(x), mapY(y));
+                    lastY = y;
+                    lastX = x;
+                } else {
+                    // Point non valide, on termine la forme actuelle
+                    endShape();
+                    beginShape();
+                    lastY = null;
+                    lastX = null;
                 }
             } catch (e) {
-                // Si une erreur se produit (ex: division par zéro), on arrête la ligne
+                // Si une erreur se produit, on termine la forme actuelle
                 endShape();
                 beginShape();
+                lastY = null;
+                lastX = null;
             }
         }
         endShape();

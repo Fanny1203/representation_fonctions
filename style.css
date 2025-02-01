@@ -28,6 +28,17 @@ body {
     gap: 10px;
 }
 
+/* Style pour la case à cocher et son label */
+.input-group input[type="checkbox"] {
+    margin: 0;
+    width: auto;
+}
+
+.input-group input[type="number"]:disabled {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
 input[type="text"], input[type="number"] {
     padding: 8px;
     border: 1px solid #ddd;
