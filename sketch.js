@@ -273,14 +273,23 @@ function draw() {
         strokeWeight(1);
         noFill();
         beginShape();
+        
+        // On utilise plus de points pour la courbe continue
+        const numPoints = width;
         const f = math.compile(document.getElementById('function').value);
-        for (let px = 0; px <= width; px++) {
-            const x = map(px, 0, width, xmin, xmax);
+        
+        for (let i = 0; i <= numPoints; i++) {
+            const x = map(i, 0, numPoints, xmin-1, xmax+1);
             try {
                 const y = f.evaluate({x: x});
-                vertex(px, mapY(y));
+                // On vérifie que y est dans les limites
+                if (y >= yMin && y <= yMax && !isNaN(y)) {
+                    vertex(mapX(x), mapY(y));
+                }
             } catch (e) {
-                // Ignorer les points où la fonction n'est pas définie
+                // Si une erreur se produit (ex: division par zéro), on arrête la ligne
+                endShape();
+                beginShape();
             }
         }
         endShape();
