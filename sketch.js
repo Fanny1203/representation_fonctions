@@ -44,10 +44,12 @@ function handleCanvasClick() {
     const margin = 40;
     const xmin = values[0].x;
     const xmax = values[values.length - 1].x;
+    const rangex = xmax - xmin;
+    const rangey = yMax - yMin;
     
     // Fonctions de transformation des coordonnées
-    const mapX = (x) => map(x, xmin, xmax, margin, width - margin);
-    const mapY = (y) => map(y, yMin, yMax, height - margin, margin);
+    const mapX = (x) => map(x, xmin-0.05*rangex, xmax+0.05*rangex, margin, width - margin);
+    const mapY = (y) => map(y, yMin-0.05*rangey, yMax+0.05*rangey, height - margin, margin);
     
     // Recherche du point le plus proche
     let closestPoint = null;
@@ -82,12 +84,20 @@ function updateTableSelection() {
     
     if (selectedPoint !== null) {
         // Sélectionner les cellules correspondantes (x et y)
-        const xCells = document.querySelectorAll('.table-row:first-child .table-cell');
-        const yCells = document.querySelectorAll('.table-row:last-child .table-cell');
-        
-        // +1 car la première cellule est l'en-tête
-        xCells[selectedPoint + 1].classList.add('selected');
-        yCells[selectedPoint + 1].classList.add('selected');
+        const rows = document.querySelectorAll('.table-row');
+        if (rows.length >= 2) {
+            const xRow = rows[0];
+            const yRow = rows[1];
+            
+            // Sélectionner les cellules (+1 car la première cellule est l'en-tête)
+            const xCells = xRow.querySelectorAll('.table-cell');
+            const yCells = yRow.querySelectorAll('.table-cell');
+            
+            if (selectedPoint + 1 < xCells.length && selectedPoint + 1 < yCells.length) {
+                xCells[selectedPoint + 1].classList.add('selected');
+                yCells[selectedPoint + 1].classList.add('selected');
+            }
+        }
     }
 }
 
@@ -211,7 +221,6 @@ function draw() {
     const rangex = xmax - xmin;
     const rangey = yMax - yMin;
     
-    
     // Transformation des coordonnées
     const mapX = (x) => map(x, xmin-0.05*rangex, xmax+0.05*rangex, margin, width - margin);
     const mapY = (y) => map(y, yMin-0.05*rangey, yMax+0.05*rangey, height - margin, margin);
@@ -299,22 +308,11 @@ function draw() {
         text(yDisplay, mapX(0) - 25, screenY);
     }
     
-    // Dessin des points
+    // Dessin des points et des lignes de repère
     stroke(255, 0, 0);
     strokeWeight(6);
-    values.forEach((value, index) => {
-        if (index === selectedPoint) {
-            // Point sélectionné plus gros et avec un contour
-            stroke(255);
-            strokeWeight(8);
-            point(mapX(value.x), mapY(value.y));
-            stroke(255, 0, 0);
-            strokeWeight(6);
-        }
-        point(mapX(value.x), mapY(value.y));
-    });
     
-    // Dessin des lignes pointillées pour le point sélectionné
+    // Dessiner d'abord les lignes de repère si un point est sélectionné
     if (selectedPoint !== null) {
         const selectedX = values[selectedPoint].x;
         const selectedY = values[selectedPoint].y;
@@ -332,6 +330,19 @@ function draw() {
         // Réinitialiser le style de ligne
         drawingContext.setLineDash([]);
     }
+    
+    // Dessiner ensuite tous les points
+    values.forEach((value, index) => {
+        if (index === selectedPoint) {
+            // Point sélectionné plus gros et avec un contour
+            stroke(255);
+            strokeWeight(8);
+            point(mapX(value.x), mapY(value.y));
+            stroke(255, 0, 0);
+            strokeWeight(6);
+        }
+        point(mapX(value.x), mapY(value.y));
+    });
     
     // Dessin de la courbe si demandé
     if (showCurve) {
